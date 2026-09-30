@@ -7,7 +7,7 @@ Proxmox node is doing, and, optionally, lets your Proxmox users manage their own
 
 **Network and services** (one table)
 - Gateway ping, internet ping, and reachability of the Proxmox web UI
-- LAN broadcast round trip (needs a small responder, see [Broadcast check](#broadcast-check))
+- LAN broadcast round trip
 - DNS: lookup time against each resolver you list
 - DHCP: sends a real DISCOVER and waits for an OFFER
 - UPnP: an end-to-end test of your router's UPnP gateway (discovery, add, verify, lease expiry)
@@ -127,9 +127,7 @@ every other name uses the `pve` realm.
 
 ## Broadcast check
 
-The check sends a UDP probe to `network.broadcast` on port 55399 and waits for a reply. Run
-`tools/broadcast-responder.py` on another machine to answer it (`deploy/` has an example
-systemd unit). The port and the strings in the script must match `checks/network.js`.
+The check sends a UDP probe to `network.broadcast` on port 55399 and waits for a reply.
 
 Run the responder on a **different physical machine**. If it runs on the same hypervisor as
 Open Moxdash, the probe only crosses the host's virtual bridge and never touches your real
@@ -206,6 +204,5 @@ config.js           reads config.json
 secrets.js          in-memory holder for the Proxmox token secret
 checks/             one module per check; index.js schedules them
 public/             the frontend (index.html, main.js, style.css, fonts)
-tools/              broadcast-responder.py
 deploy/             example systemd units
 ```

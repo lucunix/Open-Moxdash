@@ -1,7 +1,6 @@
 'use strict';
-// Network reachability checks (gateway ping, LAN broadcast round trip, internet
-// ping) plus run(), the shell helper shared by the other checks (ssh.js uses it).
-const dgram     = require('dgram');
+// Network reachability checks (gateway ping, internet ping) plus run(), the shell helper
+// shared by the other checks (ssh.js uses it). The LAN broadcast check is in broadcast.js.
 const { cfg }   = require('../config');
 
 // Runs a shell command and resolves { ok, stdout, stderr }; never rejects. ok is
@@ -60,77 +59,6 @@ async function checkGateway() {
   return { ok: ok && ms !== null, host: ip, detail: ok && ms !== null ? `${ms}ms` : 'unreachable' };
 }
 
-// LAN broadcast check: sends a probe datagram to network.broadcast (UDP 55399)
-// and waits up to 3s for an ACK from a responder (tools/broadcast-responder.py).
-// The detail string is the round-trip time. Returns null when no broadcast
-// address is configured.
-async function checkBroadcast() {
-  const ip = cfg('network.broadcast');
-  if (!ip) return null;
-
-  // The port and both strings are a wire protocol shared with
-  // tools/broadcast-responder.py: the responder answers exactly PAYLOAD with
-  // ACK_PREFIX + its hostname. Change them in both places or not at all.
-  const PORT       = 55399;
-  const PAYLOAD     = 'open-moxdash-broadcast-probe';
-  const ACK_PREFIX  = 'open-moxdash-broadcast-ack:';
-  const TIMEOUT     = 3000;
-
-  // A same-host kernel loopback (the sender receiving its own outbound
-  // broadcast datagram) proves nothing about the network — it happens
-  // whenever `ip` matches this host's own interface, with no packet ever
-  // reaching another device. Only an ACK from an external responder
-  // (tools/broadcast-responder.py) proves the probe was answered by another
-  // process. For a true LAN test, run the responder on a different physical
-  // machine: if it shares a hypervisor with this app, the probe only crosses
-  // the host's virtual bridge and never touches the physical network.
-  return new Promise(resolve => {
-    const sock = dgram.createSocket({ type: 'udp4', reuseAddr: true });
-    let done = false;
-
-    const finish = (ok, detail) => {
-      if (done) return;
-      done = true;
-      try { sock.close(); } catch (_) {}
-      resolve({ ok, host: ip, detail });
-    };
-
-    const timer = setTimeout(() => {
-      console.warn(`[network] broadcast ${ip} — no ACK from an external responder within ${TIMEOUT}ms`);
-      finish(false, 'no ack');
-    }, TIMEOUT);
-
-    sock.on('error', err => {
-      clearTimeout(timer);
-      console.warn(`[network] broadcast socket error: ${err.message}`);
-      finish(false, 'socket error');
-    });
-
-    sock.on('message', msg => {
-      const text = msg.toString();
-      if (text.startsWith(ACK_PREFIX)) {
-        clearTimeout(timer);
-        finish(true, `${Date.now() - start}ms`);
-      }
-      // Any other message (e.g. the same-host loopback of our own PAYLOAD)
-      // is ignored — it isn't proof of anything and we keep waiting.
-    });
-
-    let start;
-    sock.bind(PORT, () => {
-      sock.setBroadcast(true);
-      start = Date.now();
-      sock.send(PAYLOAD, PORT, ip, err => {
-        if (err) {
-          clearTimeout(timer);
-          console.warn(`[network] broadcast send error: ${err.message}`);
-          finish(false, 'send failed');
-        }
-      });
-    });
-  });
-}
-
 // Internet reachability: pings 1.1.1.1 (Cloudflare's public resolver). The
 // target is fixed in code, not configurable.
 async function checkInternet() {
@@ -143,4 +71,4 @@ async function checkInternet() {
   return { ok: ok && ms !== null, detail: ok && ms !== null ? `${ms}ms` : 'unreachable' };
 }
 
-module.exports = { run, checkGateway, checkBroadcast, checkInternet };
+module.exports = { run, checkGateway, checkInternet };

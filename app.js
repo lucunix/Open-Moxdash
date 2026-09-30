@@ -789,7 +789,7 @@ module.exports = function makeApp(state) {
     res.json({
       network: {
         gateway:   !!raw.network?.gateway,
-        broadcast: !!raw.network?.broadcast,
+        broadcast: !!(raw.network?.broadcast && raw.network?.broadcast_listener),
         subnet:    raw.network?.subnet || null,
       },
       dns: Object.fromEntries(

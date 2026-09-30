@@ -14,8 +14,10 @@ const CONFIG_PATH = path.join(__dirname, 'config.json');
 // config.example.json for a fully populated example. What each setting does:
 //
 //   network.gateway            router address, pinged by the Gateway check
-//   network.broadcast          LAN broadcast address for the broadcast probe (needs a
-//                              responder, see tools/broadcast-responder.py)
+//   network.broadcast          LAN broadcast address for the broadcast probe
+//   network.broadcast_listener machine that runs the probe's listener during each check,
+//                              reached over SSH; ideally a different physical machine.
+//                              The check runs only when both broadcast settings are set
 //   network.subnet             CIDR; guest IPs and UPnP mappings outside it are ignored
 //   dns_test_domain            name resolved to test each DNS server
 //   dns                        { label: resolver IP }, each checked and shown separately
@@ -44,6 +46,7 @@ const DEFAULT_CONFIG = {
   network: {
     gateway:   '',
     broadcast: '',
+    broadcast_listener: '',
     subnet:    '',
   },
   dns_test_domain: 'example.com',

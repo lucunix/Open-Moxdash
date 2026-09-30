@@ -2,6 +2,7 @@
   "network": {
     "gateway": "192.168.1.1",
     "broadcast": "192.168.1.255",
+    "broadcast_listener": "192.168.1.11",
     "subnet": "192.168.1.0/24"
   },
   "dns_test_domain": "example.com",

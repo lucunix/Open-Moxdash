@@ -9,7 +9,8 @@
 // skipped rather than reported as failures.
 const { cfg }   = require('../config');
 const secrets   = require('../secrets');
-const { checkGateway, checkBroadcast, checkInternet } = require('./network');
+const { checkGateway, checkInternet } = require('./network');
+const { checkBroadcast }    = require('./broadcast');
 const { checkDns }          = require('./dns');
 const { checkProxmoxUI, checkProxmoxStats, discoverNodes } = require('./proxmox');
 const { checkDhcp }         = require('./dhcp');
@@ -60,7 +61,8 @@ async function runFast(writeTo) {
 async function runSlow(writeTo) {
   const tasks = [];
   if (cfg('network.gateway'))   tasks.push(checkGateway().then(r  => writeTo('network.gateway',   r)));
-  if (cfg('network.broadcast')) tasks.push(checkBroadcast().then(r => writeTo('network.broadcast', r)));
+  if (cfg('network.broadcast') && cfg('network.broadcast_listener'))
+    tasks.push(checkBroadcast().then(r => writeTo('network.broadcast', r)));
   tasks.push(checkInternet().then(r => writeTo('network.internet', r)));
 
   const dnsServers   = cfg('dns') || {};
