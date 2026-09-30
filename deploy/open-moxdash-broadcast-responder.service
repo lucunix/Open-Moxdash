@@ -1,0 +1,13 @@
+[Unit]
+Description=Open Moxdash broadcast-probe responder
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/open-moxdash/tools/broadcast-responder.py
+Restart=always
+RestartSec=2
+DynamicUser=yes
+
+[Install]
+WantedBy=multi-user.target

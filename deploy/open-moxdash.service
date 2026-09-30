@@ -1,0 +1,17 @@
+[Unit]
+Description=Open Moxdash
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/open-moxdash
+ExecStart=/usr/bin/node /opt/open-moxdash/webowner.js
+Restart=always
+RestartSec=5
+
+# Optional: supply the Proxmox API token secret as an encrypted credential instead of
+# putting it in config.json. Create the credential with:
+#   systemd-creds encrypt --name=proxmox-token-secret - /etc/credstore.encrypted/proxmox-token-secret
+LoadCredentialEncrypted=proxmox-token-secret:/etc/credstore.encrypted/proxmox-token-secret
+
+[Install]
+WantedBy=multi-user.target

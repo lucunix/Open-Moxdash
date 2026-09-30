@@ -1,0 +1,298 @@
+/* Open Moxdash stylesheet: a dark theme. Poppins (SIL Open Font License) is self-hosted in
+   /fonts so the Content-Security-Policy can stay 'self'. Each weight has a Latin and a
+   Latin-extended file, selected by unicode-range. */
+@font-face {
+  font-family: 'Poppins'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('/fonts/poppins-400.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Poppins'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('/fonts/poppins-400-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+2020, U+20A0-20AB, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Poppins'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('/fonts/poppins-500.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Poppins'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('/fonts/poppins-500-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+2020, U+20A0-20AB, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Poppins'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('/fonts/poppins-600.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Poppins'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('/fonts/poppins-600-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+2020, U+20A0-20AB, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Palette and font as variables. ok / warn / bad / info are the value colours behind the
+   .v-* classes and the meters. */
+:root {
+  --bg:      #141619;
+  --panel:   #1a1d21;
+  --head:    #202429;
+  --border:  #2c3138;
+  --rule:    #24282d;
+  --text:    #dcdfe3;
+  --muted:   #8b939c;
+  --dim:     #5f6873;
+  --ok:      #56c98a;
+  --warn:    #d8a94a;
+  --bad:     #e2645a;
+  --info:    #7fb0dc;
+  --font:    'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14.5px;
+  line-height: 1.5;
+  padding: 13px 17px 40px;
+  max-width: 1560px;
+  margin: 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Header ── */
+header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+#page-title { font-size: 17px; font-weight: 600; letter-spacing: .01em; }
+#status-meta { font-size: 13.5px; color: var(--dim); }
+#auth-area { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); flex: none; }
+.dot.pending { background: var(--warn); }
+.dot.error   { background: var(--bad); }
+
+/* ── Panels ── */
+.panel { border: 1px solid var(--border); border-radius: 3px; background: var(--panel); margin-bottom: 18px; }
+.panel-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 7px 11px;
+  background: var(--head);
+  border-bottom: 1px solid var(--border);
+}
+.panel-title { color: var(--text); font-weight: 600; font-size: 15px; }
+.panel-note  { color: var(--dim); font-size: 13.5px; margin-left: auto; }
+
+/* ── Data tables ── */
+.scroll-x { overflow-x: auto; scrollbar-width: thin; scrollbar-color: #3a4048 transparent; }
+.scroll-x::-webkit-scrollbar { height: 9px; }
+.scroll-x::-webkit-scrollbar-track { background: transparent; }
+.scroll-x::-webkit-scrollbar-thumb { background: #3a4048; border-radius: 5px; }
+.scroll-x::-webkit-scrollbar-thumb:hover { background: #4a5158; }
+table.dt { width: 100%; border-collapse: collapse; }
+/* Shrink-to-fit: a small specified width makes each column fall back to its
+   min-content size, and the single auto-width filler column soaks up the rest.
+   (Using min-width:max-content here instead created a circular constraint with
+   the filler's width and inflated the table into a permanent scrollbar.) */
+table.dt th, table.dt td { width: 1px; }
+table.dt th {
+  text-align: left; font-weight: 400; color: var(--dim);
+  font-size: inherit; padding: 5px 11px; white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+table.dt td {
+  padding: 5px 11px; white-space: nowrap;
+  border-bottom: 1px solid var(--rule);
+}
+table.dt tbody tr:last-child td { border-bottom: none; }
+table.dt tbody tr:hover td { background: rgba(255,255,255,.022); }
+table.dt th.num, table.dt td.num { text-align: right; }
+/* Absorbs leftover width so real columns hug their content */
+table.dt th.fill, table.dt td.fill { width: auto; padding: 0; }
+table.dt td.lbl { color: var(--muted); }
+/* Long supplementary text wraps instead of pushing the result column
+   off-screen on narrow viewports */
+table.dt th.wide, table.dt td.wide { width: auto; max-width: 250px; white-space: normal; }
+/* Long free-text cell truncates rather than shoving later columns off-panel */
+table.dt td.name-cell { max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
+/* Reserves room for the widest realistic value ("999 MiB/s") so the column
+   doesn't jitter left/right every ~3s poll as the digit count changes. */
+table.dt td.rate-cell { min-width: 96px; }
+
+/* Sub-section label inside a panel — separates regions so a panel with
+   several tables doesn't read as one undifferentiated block */
+.subhead {
+  padding: 13px 11px 5px;
+  color: var(--muted);
+  font-size: inherit;
+  font-weight: 600;
+  border-top: 1px solid var(--rule);
+  margin-top: 4px;
+}
+.subhead:first-child { border-top: none; margin-top: 0; }
+
+/* Group separator row inside a table */
+/* Section separator, deliberately NOT styled like a data row: heavier weight,
+   brighter text and its own rule so it reads as a label, not a value. */
+tr.grp td {
+  color: var(--text); font-size: inherit; font-weight: 600;
+  padding: 8px 11px;
+  background: #252a30;
+  border-top: 1px solid #333a41;
+  border-bottom: 1px solid #333a41;
+}
+table.dt tbody tr.grp:first-child td { border-top: none; }
+table.dt tbody tr.grp:hover td { background: #252a30; }
+
+/* ── Key/value strip ── */
+/* Items size to their content so short values don't hog width; the two metered
+   items absorb all the slack, giving their bars maximum resolution. */
+.kv { display: flex; flex-wrap: wrap; }
+.kv-item {
+  padding: 7px 11px;
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  display: flex; align-items: center; gap: 12px;
+  flex: 0 0 auto;
+}
+.kv-l { color: var(--dim); flex: none; }
+.kv-v { margin-left: auto; }
+
+/* Metered items share the leftover width equally. The label and number are
+   given identical reserved widths in both, so the two bars end up the same
+   length instead of RAM's longer text eating into its own bar. */
+.kv-item.grow { flex: 1 1 0; min-width: 210px; }
+.kv-item.grow .kv-l { min-width: 34px; }
+.kv-item.grow .kv-v { flex: 1 1 auto; display: flex; align-items: center; gap: 10px; margin-left: 0; }
+.kv-item.grow .kv-num { flex: none; min-width: 124px; text-align: right; }
+.kv-item.grow .meter { flex: 1 1 auto; width: auto; min-width: 46px; margin-right: 0; }
+
+/* One-line dim footer for long, low-priority strings */
+.meta-line {
+  padding: 7px 11px; color: var(--dim); font-size: 13.5px;
+  border-top: 1px solid var(--rule); white-space: normal;
+}
+.meta-line .sep { color: #3a3e44; margin: 0 6px; }
+
+/* ── Values ── */
+.v-ok   { color: var(--ok); }
+.v-warn { color: var(--warn); }
+.v-bad  { color: var(--bad); }
+.v-dim  { color: var(--dim); }
+.v-info { color: var(--info); }
+.client-link { text-decoration: none; }
+.client-link:hover { text-decoration: underline; }
+.v-mute { color: var(--muted); }
+/* Full CPU model on desktop; shortened (Intel(R)/Xeon(R)/CPU stripped) on
+   mobile — swapped via the media query below rather than reflowed text,
+   since it's the exact same underlying value either way. */
+.cpu-model-short { display: none; }
+
+/* Small fixed-width meter — only used where proportion actually matters */
+.meter {
+  display: inline-block; width: 42px; height: 4px;
+  background: #303439; border-radius: 1px; vertical-align: middle;
+  margin-right: 6px; flex: none;
+}
+.meter > i { display: block; height: 100%; border-radius: 1px; }
+
+/* ── Collapsible (only for genuinely large payloads, e.g. per-thread CPU detail) ── */
+details.more { border-top: 1px solid var(--rule); }
+details.more > summary {
+  padding: 6px 11px; cursor: pointer; color: var(--muted); font-size: inherit;
+  list-style: none; display: flex; align-items: center; gap: 6px;
+}
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::before { content: '+'; color: var(--dim); }
+details.more[open] > summary::before { content: '−'; }
+details.more > summary:hover { color: var(--text); }
+
+.core-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+  gap: 0 12px; padding: 5px 11px 8px;
+}
+.core-row { display: flex; align-items: baseline; gap: 7px; font-size: 13.5px; white-space: nowrap; }
+.core-row .ci { color: var(--dim); width: 30px; flex: none; }
+.core-row .cg { color: var(--muted); flex: none; }
+.core-row .cu { margin-left: auto; }
+
+/* ── Forms ── */
+input, select, button {
+  font-family: var(--font); font-size: inherit; color: var(--text);
+  background: #23272c; border: 1px solid var(--border);
+  border-radius: 3px; padding: 4px 9px; outline: none;
+}
+input:focus, select:focus { border-color: var(--muted); }
+input::placeholder { color: var(--dim); }
+button { cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--muted); }
+button:disabled { opacity: .5; cursor: default; }
+input[type=number] { -moz-appearance: textfield; }
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+#login-form { display: flex; gap: 5px; align-items: center; }
+#login-form input { width: 132px; }
+#auth-error { color: var(--bad); font-size: 13.5px; }
+#auth-user  { color: var(--muted); font-size: 13.5px; }
+
+/* ── Add-mapping toolbar ── */
+.addmap {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 5px;
+  padding: 9px 11px; border-bottom: 1px solid var(--rule);
+}
+.addmap-l { color: var(--dim); margin-right: 3px; }
+.addmap #mapping-desc  { width: 122px; }
+.addmap #mapping-iport,
+.addmap #mapping-eport { width: 78px; }
+.addmap #mapping-lease { width: 112px; }
+.addmap #mapping-client { max-width: 168px; }
+.addmap-err { color: var(--bad); font-size: 13.5px; }
+
+/* Lock: a text badge, not an emoji — it can be coloured and read at a glance */
+.lock {
+  cursor: pointer; font-size: 12px; font-weight: 600; padding: 2px 8px;
+  border: 1px solid; border-radius: 2px; user-select: none; flex: none;
+}
+.lock.locked   { color: var(--ok);  border-color: #2f6b45; background: #1a2a20; }
+.lock.unlocked { color: var(--bad); border-color: #6b3230; background: #2a1c1b; }
+
+.del-btn { padding: 1px 7px; line-height: 17px; color: var(--bad); background: transparent; }
+.del-btn:hover:not(:disabled) { background: #3a3f45; }
+
+/* ── Misc ── */
+.ph { color: var(--dim); }
+.empty { padding: 10px 11px; color: var(--dim); }
+.warnbox { padding: 8px 11px; border-bottom: 1px solid var(--rule); font-size: 13.5px; }
+.warnbox b { color: var(--warn); font-weight: 600; }
+.warnbox span { color: var(--muted); }
+
+.cols2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); gap: 18px; align-items: start; margin-bottom: 18px; }
+.cols2 > * { min-width: 0; }
+.cols2 .panel { margin-bottom: 0; }
+
+@media (max-width: 620px) {
+  body { padding: 10px 12px 30px; font-size: 14px; }
+  header { flex-wrap: wrap; }
+  #auth-area { margin-left: 0; width: 100%; }
+  #login-form input { width: 100%; flex: 1; }
+  /* One stat per line — sharing a row got cramped once RAM's longer value
+     text left just enough space for the next item to squeeze in beside it. */
+  .kv-item, .kv-item.grow { flex: 1 1 100%; min-width: 0; }
+  .kv-item.grow .kv-num { min-width: 0; }
+  table.dt th, table.dt td { padding: 5px 8px; }
+  table.dt td.wide { max-width: 170px; }
+  table.dt td.name-cell { max-width: 130px; }
+  .cols2 { grid-template-columns: 1fr; }
+  .cpu-model-full  { display: none; }
+  .cpu-model-short { display: inline; }
+}

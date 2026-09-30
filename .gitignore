@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+
+# Your local settings and data — copy the *.example.* files to create these
+config.json
+disk_names.json
+upnp-blacklist.json
+upnp-permanent-users.txt
+
+# Logs and editor noise
+*.log
+.DS_Store

@@ -1,0 +1,6 @@
+# upnp-permanent-users.txt
+#
+# Copy this file to upnp-permanent-users.txt to activate it.
+# One username@realm per line — e.g. root@pam, alice@pve
+# Blank lines and lines starting with # are ignored.
+# Only consulted when upnp.permanent_lease_access is set to "list" in config.json.

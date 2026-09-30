@@ -1,0 +1,34 @@
+# upnp-blacklist.json — despite the extension, this is parsed line by line, NOT as JSON.
+#
+# Copy this file to upnp-blacklist.json to activate it. It is optional and is re-read on
+# every use, so edits apply without a restart.
+#
+# One rule per line. A rule can match on any combination of internal client
+# IP, external port, and internal port — a field you leave out acts as a
+# wildcard. A rule blocks a mapping only when every field it DOES specify
+# matches the request. Port fields accept a single port or a START-END range
+# (inclusive on both ends).
+#
+# Shorthand forms:
+#   PORT             blocks that external port for every internal client
+#   PORT-PORT        blocks that external port range for every internal client
+#   IP:PORT          blocks that external port only for that internal client IP
+#   IP:PORT-PORT     blocks that external port range only for that IP
+#
+# Full form (any subset of ip / ext / int, any order, comma-separated,
+# ext/int accept ranges the same way):
+#   ip=IP                     blocks every mapping for that IP, any ports
+#   ext=PORT or ext=LOW-HIGH  same as the bare PORT / PORT-PORT shorthand
+#   int=PORT or int=LOW-HIGH  blocks that internal port/range, any IP, any ext
+#   ip=IP,ext=PORT            same as the IP:PORT shorthand
+#   ip=IP,int=PORT            blocks that internal port only for that IP
+#   ext=PORT,int=PORT         blocks that specific ext+int pairing, any IP
+#   ip=IP,ext=PORT,int=PORT   blocks only that exact IP+ext+int combination
+#
+# Blank lines and lines starting with # are ignored.
+#
+# Examples (remove the leading # to enable):
+#   25
+#   3389-3390
+#   192.168.1.50:8080
+#   ip=192.168.1.60

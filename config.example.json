@@ -1,0 +1,47 @@
+{
+  "network": {
+    "gateway": "192.168.1.1",
+    "broadcast": "192.168.1.255",
+    "subnet": "192.168.1.0/24"
+  },
+  "dns_test_domain": "example.com",
+  "dns": {
+    "primary": "1.1.1.1",
+    "secondary": "8.8.8.8",
+    "tertiary": "8.8.4.4"
+  },
+  "proxmox": {
+    "host": "192.168.1.10",
+    "port": 8006,
+    "node": "pve",
+    "api_token_id": "root@pam!open-moxdash",
+    "ui_host": "",
+    "ssh_user": "root",
+    "allowed_ips_ttl": "5m"
+  },
+  "upnp": {
+    "enabled": false,
+    "test_port": 62108,
+    "show_all_ports": false,
+    "max_mappings": 1024,
+    "all_ports_role": "root",
+    "permanent_lease_access": "off",
+    "refresh_on_add": true,
+    "refresh_on_delete": true,
+    "refresh_on_login": true
+  },
+  "dhcp": {
+    "server": "192.168.1.1"
+  },
+  "sse": {
+    "max_connections_per_ip": 1,
+    "exceptions": []
+  },
+  "trusted_proxies": "",
+  "page": {
+    "title": "Open Moxdash",
+    "refresh_seconds": 30,
+    "fast_refresh_seconds": 3
+  },
+  "checks": {}
+}
