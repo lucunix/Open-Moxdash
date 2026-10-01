@@ -1,5 +1,5 @@
 'use strict';
-// SELF-SHA256: b340d8a789491dc0528163ffe3390b0b7354915322101f8db849e0f4b7343aa9
+// SELF-SHA256: cd370ef61facdf112d0c8bdc8131602d0292970e070b8a3b2fc186955b693dce
 // Open Moxdash entry point (start with `node webowner.js`, or `npm start`).
 //
 // This file owns everything that must survive a hot reload: the shared state, the
@@ -51,7 +51,7 @@ const NO_HASHING = process.argv.includes('--no-hashing');
 
 // BEGIN FILE HASHES
 const FILE_HASHES = Object.freeze({
-  'app.js': '6ced8b3dee903cf31121b5a0ff895b1d5271124240a5e02435b6460bb8af7a0b',
+  'app.js': 'efc7eabf2f5e9ee508fc25c9934e1fbfe75159dbbc2c8bfa6ed1685a91fa4302',
   'checks/broadcast.js': '312b766efc65b354355ddc118775e441616a532e5812de14472f851eae136a0c',
   'checks/cpu.js': 'c6dd2ba1a2c47beeef5629a3425f01f6f7457b8e7408ce66fd130e424a3fe880',
   'checks/dhcp.js': 'ad401079ad3bb445d03d2484610e1ec8f1f6d281a9b5625df23a45f3f1ea380d',
@@ -67,7 +67,7 @@ const FILE_HASHES = Object.freeze({
   'checks/upnp.js': '265ff3441a680bbaa3a22a336e4183efd69924d7c960ae70897bed5c379fb9d0',
   'config.js': 'f581fb721bbfcca78ffdbdc0f7985dfb26062e3b79fdb52f02fd48aac0d75dab',
   'guard.js': 'd085d47a8d89e61e2f4a3ee8d7a7562c80a05e31616df9ace522736ef2d0f56f',
-  'public/main.js': 'e440add45dcf2c7c206b01d56bc3b2a85929fc2592dd6259d7521cc2d53bcbc8',
+  'public/main.js': '4ffffe300252fc1c9c526bc909599d2100ae3020574c95118c0aa18eb36d5b5f',
   'secrets.js': 'd271edd0bd431f76e5c497b84638daf47bb393be3b9919c163cd8a9688586e73',
 });
 // END FILE HASHES

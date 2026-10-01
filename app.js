@@ -388,8 +388,8 @@ module.exports = function makeApp(state) {
   // straight out of the HTML response — they never run main.js, so the
   // summary has to be built and inlined server-side, from the same
   // displayCache the page itself renders from. Only uses data that's already
-  // visible to anyone loading the page without logging in (port mappings,
-  // the one section that needs auth, are deliberately left out).
+  // visible to anyone loading the page without logging in (UPnP, which only
+  // appears after login, is deliberately left out).
   function buildEmbedDescription() {
     const d = state.displayCache || {};
     let total = 0;
@@ -408,7 +408,6 @@ module.exports = function makeApp(state) {
     consider('Proxmox UI', d.services?.proxmox_ui);
     for (const [label, v] of Object.entries(d.dns || {})) consider(`DNS ${cap(label)}`, v);
     consider('DHCP', d.services?.dhcp);
-    consider('UPnP', d.services?.upnp);
     for (const r of (d.serviceChecks || [])) consider(r.label, r);
 
     const lines = [];
@@ -580,9 +579,11 @@ module.exports = function makeApp(state) {
 
   // ── Status route ──────────────────────────────────────────────────────────────
 
-  // The frontend's polling endpoint. Everything is public except UPnP port mappings,
-  // which are personalised: none when logged out, all for privileged users, otherwise
-  // only mappings whose internal client is one of the user's own IPs.
+  // The frontend's polling endpoint. Everything is public except UPnP: logged out, the
+  // response carries no UPnP data at all (the page looks as if upnp.enabled were off).
+  // Logged in, it carries the UPnP result and the user's port mappings: all of them for
+  // privileged users, otherwise only those whose internal client is one of the user's
+  // own IPs.
   app.get('/api/status', async (req, res) => {
     let sess = getSession(req);
     // Piggybacks on the poll the frontend is already doing every ~3s — keeps
@@ -594,20 +595,18 @@ module.exports = function makeApp(state) {
       sess = getSession(req);
     }
     let data = state.displayCache;
+    const upnp = data?.services?.upnp;
 
-    if (state.displayCache?.services?.upnp?.mappings) {
-      const mappings = sess
-        ? (sess.canSeeAllMappings
-            ? state.displayCache.services.upnp.mappings
-            : state.displayCache.services.upnp.mappings.filter(m => sess.allowedIps.has(m.internalClient)))
-        : [];
+    if (upnp && !sess) {
       data = {
-        ...state.displayCache,
-        services: {
-          ...state.displayCache.services,
-          upnp: { ...state.displayCache.services.upnp, mappings },
-        },
+        ...data,
+        services: Object.fromEntries(Object.entries(data.services).filter(([name]) => name !== 'upnp')),
       };
+    } else if (upnp?.mappings) {
+      const mappings = sess.canSeeAllMappings
+        ? upnp.mappings
+        : upnp.mappings.filter(m => sess.allowedIps.has(m.internalClient));
+      data = { ...data, services: { ...data.services, upnp: { ...upnp, mappings } } };
     }
 
     res.json({
@@ -783,9 +782,11 @@ module.exports = function makeApp(state) {
 
   // Tells the frontend which panels to render. Public (no login): it exposes feature
   // flags and page settings, plus the LAN subnet and the labels and types of custom
-  // checks, but never host addresses or credentials.
+  // checks, but never host addresses or credentials. UPnP is reported as off until the
+  // request carries a login, so a logged-out page looks as if UPnP were not configured.
   app.get('/api/config', (req, res) => {
-    const raw = load();
+    const raw  = load();
+    const sess = getSession(req);
     res.json({
       network: {
         gateway:   !!raw.network?.gateway,
@@ -799,11 +800,13 @@ module.exports = function makeApp(state) {
         enabled: !!(raw.proxmox?.host && raw.proxmox?.api_token_id && secrets.getToken()),
         uiCheck: !!raw.proxmox?.host,
       },
-      upnp: {
-        enabled:        !!(raw.upnp?.enabled),
-        show_all_ports: !!(raw.upnp?.show_all_ports),
-        all_ports_role: resolvedAllPortsRole(),
-      },
+      upnp: sess
+        ? {
+            enabled:        !!(raw.upnp?.enabled),
+            show_all_ports: !!(raw.upnp?.show_all_ports),
+            all_ports_role: resolvedAllPortsRole(),
+          }
+        : { enabled: false },
       dhcp: {
         enabled: !!raw.dhcp?.server,
       },

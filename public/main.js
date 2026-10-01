@@ -5,9 +5,11 @@
 //
 // Layout: the Checks and Port mappings panels side by side, then one Proxmox panel per
 // cluster node. Which panels appear depends on /api/config (what the server has
-// configured). Every server-supplied value goes through esc() before reaching innerHTML.
+// configured; UPnP counts as configured only once you are logged in). Every
+// server-supplied value goes through esc() before reaching innerHTML.
 
-// Feature flags and page settings from /api/config, loaded once at startup.
+// Feature flags and page settings from /api/config. Loaded at startup and again whenever the
+// login state changes, because the server reports UPnP as off until you are logged in.
 let cfg = {};
 
 // Same CIDR test as app.js; used to hide mappings outside network.subnet.
@@ -28,6 +30,10 @@ let metaErr     = '';
 // Login state mirrored from the server. The session itself is an HttpOnly cookie that
 // this script can't read; the server's answers are the only source of truth.
 let authState = { authenticated: false, username: null, canSeeAllMappings: false, allowedIps: [], ipLinks: {} };
+// UPnP is invisible until login: no UPnP row in the Checks panel and no Port mappings panel,
+// as if it were switched off. The server already withholds the data; this also keeps a
+// stale config from showing it for a moment.
+const upnpVisible = () => !!(cfg.upnp?.enabled && authState.authenticated);
 // Not persisted anywhere on purpose — resets to locked on every page load.
 let addMappingUnlocked = false;
 let lastRenderData = null;
@@ -258,7 +264,7 @@ function renderChecks(data) {
 
   // UPnP is the same shape of question — "did it answer, and did the probe
   // pass" — so it lives here rather than in a half-empty panel of its own.
-  if (cfg.upnp?.enabled) {
+  if (upnpVisible()) {
     const u = data?.services?.upnp;
     entries.push({ group: 'UPnP' });
     if (!u) {
@@ -482,62 +488,58 @@ function renderAddMappingForm() {
   </form>`;
 }
 
-// The Port mappings panel: a login prompt when logged out; otherwise the mappings the
-// server sent (already filtered to this user), narrowed to network.subnet unless
-// upnp.show_all_ports is set, each with a live lease countdown and a delete button.
+// The Port mappings panel, shown only to logged-in users: the mappings the server sent
+// (already filtered to this user), narrowed to network.subnet unless upnp.show_all_ports is
+// set, each with a live lease countdown and a delete button.
 function renderMappings(data) {
-  if (!cfg.upnp?.enabled) return '';
+  if (!upnpVisible()) return '';
   const u = data?.services?.upnp;
   if (!u) return '';
 
   let body;
-  if (!authState.authenticated) {
-    body = '<div class="empty">Log in to view port mappings</div>';
+  const showAll = cfg.upnp?.show_all_ports;
+  const subnet  = cfg.network?.subnet;
+  const visible = (u.mappings ?? []).filter(m =>
+    showAll || !subnet || !m.internalClient ? true : ipInCidr(m.internalClient, subnet));
+
+  // Drop cache entries for mappings that no longer exist, so a deleted
+  // mapping's slot doesn't linger forever and a re-added one with the
+  // same protocol/port starts its countdown fresh rather than inheriting
+  // a stale target.
+  const liveKeys = new Set(visible.map(m => `${m.protocol}:${m.externalPort}`));
+  for (const key of mappingExpiryCache.keys()) {
+    if (!liveKeys.has(key)) mappingExpiryCache.delete(key);
+  }
+
+  if (!visible.length) {
+    body = `<div class="empty">${u.igdDetected ? 'No active port mappings' : 'No IGD detected'}</div>`;
   } else {
-    const showAll = cfg.upnp?.show_all_ports;
-    const subnet  = cfg.network?.subnet;
-    const visible = (u.mappings ?? []).filter(m =>
-      showAll || !subnet || !m.internalClient ? true : ipInCidr(m.internalClient, subnet));
-
-    // Drop cache entries for mappings that no longer exist, so a deleted
-    // mapping's slot doesn't linger forever and a re-added one with the
-    // same protocol/port starts its countdown fresh rather than inheriting
-    // a stale target.
-    const liveKeys = new Set(visible.map(m => `${m.protocol}:${m.externalPort}`));
-    for (const key of mappingExpiryCache.keys()) {
-      if (!liveKeys.has(key)) mappingExpiryCache.delete(key);
-    }
-
-    if (!visible.length) {
-      body = `<div class="empty">${u.igdDetected ? 'No active port mappings' : 'No IGD detected'}</div>`;
-    } else {
-      body = dataTable([
-        { label: 'Name', always: true, raw: m => m.description, cls: 'name-cell',
-          cell: (m, d) => `<span class="v-mute" title="${esc(d)}">${esc(d)}</span>` },
-        { label: 'Proto',  always: true, raw: m => m.protocol },
-        { label: 'Int',    always: true, num: true, raw: m => m.internalPort },
-        { label: 'Ext',    always: true, num: true, raw: m => m.externalPort },
-        { label: 'Client', always: true, raw: m => m.internalClient,
-          // Links to the Proxmox UI for the VM/CT that owns this IP (server
-          // resolves the vmid — the client never knew it), not the IP itself,
-          // since a VM's LAN address usually isn't running its own web server.
-          cell: (m, c) => authState.ipLinks[c]
-            ? `<a class="v-info client-link" href="${esc(authState.ipLinks[c])}" target="_blank" rel="noopener noreferrer" title="Open in Proxmox">${esc(c)}</a>`
-            : (authState.allowedIps.includes(c) ? v('info', c) : esc(c)) },
-        { label: 'Lease',  always: true, num: true, raw: m => m.leaseDuration,
-          cell: m => m.leaseDuration === 0 ? v('dim', 'Permanent') : esc(formatDuration(m.leaseDuration)) },
-        { label: 'Left',   always: true, num: true, raw: m => m.leaseDuration,
-          cell: m => {
-            if (m.leaseDuration === 0) return DASH;
-            const expiresAt  = getMappingExpiry(m);
-            const remaining  = Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
-            return `<span class="lease-left" data-expires="${expiresAt}">${esc(formatDuration(remaining))}</span>`;
-          } },
-        { label: '', always: true, num: true, raw: () => 1,
-          cell: m => `<button class="del-btn" title="Delete mapping (shift-click to skip confirmation)"
-            data-protocol="${esc(m.protocol)}" data-port="${esc(String(m.externalPort))}">✕</button>` },
-      ], visible, 'mappings');
-    }
+    body = dataTable([
+      { label: 'Name', always: true, raw: m => m.description, cls: 'name-cell',
+        cell: (m, d) => `<span class="v-mute" title="${esc(d)}">${esc(d)}</span>` },
+      { label: 'Proto',  always: true, raw: m => m.protocol },
+      { label: 'Int',    always: true, num: true, raw: m => m.internalPort },
+      { label: 'Ext',    always: true, num: true, raw: m => m.externalPort },
+      { label: 'Client', always: true, raw: m => m.internalClient,
+        // Links to the Proxmox UI for the VM/CT that owns this IP (server
+        // resolves the vmid — the client never knew it), not the IP itself,
+        // since a VM's LAN address usually isn't running its own web server.
+        cell: (m, c) => authState.ipLinks[c]
+          ? `<a class="v-info client-link" href="${esc(authState.ipLinks[c])}" target="_blank" rel="noopener noreferrer" title="Open in Proxmox">${esc(c)}</a>`
+          : (authState.allowedIps.includes(c) ? v('info', c) : esc(c)) },
+      { label: 'Lease',  always: true, num: true, raw: m => m.leaseDuration,
+        cell: m => m.leaseDuration === 0 ? v('dim', 'Permanent') : esc(formatDuration(m.leaseDuration)) },
+      { label: 'Left',   always: true, num: true, raw: m => m.leaseDuration,
+        cell: m => {
+          if (m.leaseDuration === 0) return DASH;
+          const expiresAt  = getMappingExpiry(m);
+          const remaining  = Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
+          return `<span class="lease-left" data-expires="${expiresAt}">${esc(formatDuration(remaining))}</span>`;
+        } },
+      { label: '', always: true, num: true, raw: () => 1,
+        cell: m => `<button class="del-btn" title="Delete mapping (shift-click to skip confirmation)"
+          data-protocol="${esc(m.protocol)}" data-port="${esc(String(m.externalPort))}">✕</button>` },
+    ], visible, 'mappings');
   }
 
   let warns = '';
@@ -663,6 +665,7 @@ async function doLogin(e) {
         canSeeAllMappings: !!json.canSeeAllMappings, allowedIps: json.allowedIps || [], ipLinks: json.ipLinks || {},
       };
       addMappingUnlocked = false;
+      await loadConfig();
       renderAuthArea();
       lastTs = null;
       await fetchStatus(true);
@@ -682,6 +685,7 @@ async function doLogout() {
   await fetch('/api/auth/logout', { method: 'POST' });
   authState = { authenticated: false, username: null, canSeeAllMappings: false, allowedIps: [], ipLinks: {} };
   addMappingUnlocked = false;
+  await loadConfig();
   renderAuthArea();
   lastTs = null;
   await fetchStatus(true);
@@ -806,7 +810,8 @@ function renderMeta() {
 
 // ── Fetch loop ───────────────────────────────────────────────────────────────
 
-// Fetches /api/config once and applies the page title.
+// Fetches /api/config and applies the page title. Runs at startup and on every login or
+// logout, since UPnP only shows up in it once you are logged in.
 async function loadConfig() {
   try {
     const r = await fetch('/api/config');
@@ -835,8 +840,11 @@ async function fetchStatus(force) {
       return;
     }
 
-    // Sync auth state (handles silent session expiry)
+    // Sync auth state (handles silent session expiry). A change re-renders at once, so UPnP
+    // appears or disappears with the login instead of on the next data tick.
+    let authFlipped = false;
     if (json.authenticated !== undefined && json.authenticated !== authState.authenticated) {
+      authFlipped = true;
       authState.authenticated = json.authenticated;
       if (!json.authenticated) {
         authState.username = null;
@@ -845,6 +853,7 @@ async function fetchStatus(force) {
         authState.canSeeAllMappings = false;
       }
       renderAuthArea();
+      await loadConfig();
     }
 
     // Sync allowed-IP list every poll (e.g. a newly-created VM/CT's IP)
@@ -856,9 +865,10 @@ async function fetchStatus(force) {
       authState.ipLinks = json.ipLinks || {};
     }
 
-    // Re-render when fast data changes (~3s), or when the caller knows the
-    // data changed (login/logout/add/delete) even if the timestamp hasn't moved.
-    if (force || json.fastUpdated !== lastFastTs) {
+    // Re-render when fast data changes (~3s), when the login state just changed, or when
+    // the caller knows the data changed (login/logout/add/delete) even if the timestamp
+    // hasn't moved.
+    if (force || authFlipped || json.fastUpdated !== lastFastTs) {
       lastFastTs = json.fastUpdated;
       dot.className = 'dot';
       render(json.data);
@@ -887,9 +897,9 @@ function tickLeaseCountdowns() {
   }
 }
 
-// Startup: load config, restore any existing login, render, then start the poll and clock timers.
+// Startup: restore any existing login, load config (which depends on it), render, then start
+// the poll and clock timers.
 async function init() {
-  await loadConfig();
   try {
     const r = await fetch('/api/auth/me');
     const j = await r.json();
@@ -898,6 +908,7 @@ async function init() {
       canSeeAllMappings: !!j.canSeeAllMappings, allowedIps: j.allowedIps || [], ipLinks: j.ipLinks || {},
     };
   } catch (_) {}
+  await loadConfig();
   renderAuthArea();
   document.getElementById('root').addEventListener('click', onRootClick);
   document.getElementById('root').addEventListener('submit', onRootSubmit);
