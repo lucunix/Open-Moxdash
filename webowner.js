@@ -1,5 +1,5 @@
 'use strict';
-// SELF-SHA256: cd370ef61facdf112d0c8bdc8131602d0292970e070b8a3b2fc186955b693dce
+// SELF-SHA256: 45663635fcd225e85d220b24629e4c4adbdcab8ae400bec7fd31a26012ad3c56
 // Open Moxdash entry point (start with `node webowner.js`, or `npm start`).
 //
 // This file owns everything that must survive a hot reload: the shared state, the
@@ -67,7 +67,7 @@ const FILE_HASHES = Object.freeze({
   'checks/upnp.js': '265ff3441a680bbaa3a22a336e4183efd69924d7c960ae70897bed5c379fb9d0',
   'config.js': 'f581fb721bbfcca78ffdbdc0f7985dfb26062e3b79fdb52f02fd48aac0d75dab',
   'guard.js': 'd085d47a8d89e61e2f4a3ee8d7a7562c80a05e31616df9ace522736ef2d0f56f',
-  'public/main.js': '4ffffe300252fc1c9c526bc909599d2100ae3020574c95118c0aa18eb36d5b5f',
+  'public/main.js': 'f75f41bd86c373148b08919abd1516397f944065d338f1d90adbc692591a29b5',
   'secrets.js': 'd271edd0bd431f76e5c497b84638daf47bb393be3b9919c163cd8a9688586e73',
 });
 // END FILE HASHES

@@ -302,16 +302,37 @@ function renderChecks(data) {
     ? `<tr class="grp"><td colspan="${span}">${esc(e.group)}</td></tr>`
     : `<tr>
         <td class="lbl">${esc(e.name)}</td>
-        <td class="v-mute wide">${e.target ? esc(e.target) : ''}</td>
-        <td>${e.cell}</td>
+        <td class="v-mute wide">${e.target ? `<span class="fit">${esc(e.target)}</span>` : ''}</td>
+        <td class="res">${e.cell}</td>
         ${anyLastOk ? `<td class="num">${e.lastOk ? v('dim', e.lastOk) : ''}</td>` : ''}
         <td class="fill"></td>
       </tr>`
   ).join('');
 
   return panel('Checks', `<div class="scroll-x" data-scroll-key="checks"><table class="dt">
-    <thead><tr><th>Check</th><th class="wide">Target</th><th>Result</th>${anyLastOk ? '<th class="num">Last OK</th>' : ''}<th class="fill"></th></tr></thead>
+    <thead><tr><th>Check</th><th class="wide">Target</th><th class="res">Result</th>${anyLastOk ? '<th class="num">Last OK</th>' : ''}<th class="fill"></th></tr></thead>
     <tbody>${body}</tbody></table></div>`);
+}
+
+// The Checks table hugs its content so Result sits next to Target instead of at the far edge
+// of a wide panel, with some extra space in front of Result (--res-pad, 52px by default).
+// A panel too narrow for that would scroll sideways, so in that case the extra space shrinks
+// by the overflow (never below the normal cell padding), and only if that is not enough does
+// the table get `squeeze`, which lets the Target column wrap its text (see style.css).
+// Runs after every render, and again when the window or the fonts change the available width.
+function fitChecksTable() {
+  const box   = document.querySelector('.scroll-x[data-scroll-key="checks"]');
+  const table = box?.querySelector('table.dt');
+  if (!table) return;
+  table.classList.remove('squeeze');
+  table.style.removeProperty('--res-pad');
+  const over = () => box.scrollWidth - box.clientWidth;
+  const o = over();
+  if (o <= 0) return;
+  const wanted = parseFloat(getComputedStyle(table.querySelector('th.res')).paddingLeft);
+  const floor  = parseFloat(getComputedStyle(table.querySelector('th')).paddingLeft);
+  table.style.setProperty('--res-pad', Math.max(floor, wanted - o - 1) + 'px');
+  if (over() > 0) table.classList.add('squeeze');
 }
 
 // ── Host panel ────────────────────────────────────────────────────────────────
@@ -593,6 +614,7 @@ function render(data) {
   if (host) html += host;
 
   document.getElementById('root').innerHTML = html || '<div class="empty">No checks configured.</div>';
+  fitChecksTable();
 
   // Meter fills applied via DOM API (inline style= is blocked by CSP)
   for (const el of document.querySelectorAll('.meter > i[data-pct]')) {
@@ -920,6 +942,10 @@ async function init() {
 }
 
 init();
+
+// Widths change without a re-render when the window is resized or the web fonts arrive.
+globalThis.addEventListener?.('resize', fitChecksTable);
+document.fonts?.ready?.then(fitChecksTable);
 
 // ── Hot-reload listener ───────────────────────────────────────────────────────
 // The server sends 'reload' after a hot reload or a change to the frontend files. If the

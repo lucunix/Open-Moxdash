@@ -119,9 +119,21 @@ table.dt th.num, table.dt td.num { text-align: right; }
 /* Absorbs leftover width so real columns hug their content */
 table.dt th.fill, table.dt td.fill { width: auto; padding: 0; }
 table.dt td.lbl { color: var(--muted); }
-/* Long supplementary text wraps instead of pushing the result column
-   off-screen on narrow viewports */
-table.dt th.wide, table.dt td.wide { width: auto; max-width: 250px; white-space: normal; }
+/* Supplementary text (the Checks "Target" column). The cell hugs its text like any
+   other column, so the next column sits right beside it instead of at the far edge.
+   The cap and the wrapping live on an inner block: the column is as wide as the
+   text up to the cap, and anything longer wraps. (The cap clears the longest text
+   seen, the UPnP probe summary, at about 18em.) */
+table.dt .fit { display: block; width: max-content; max-width: 22em; white-space: normal; }
+/* Set by fitChecksTable() when the hugging layout would not fit its panel: the Target
+   column goes back to squeezing and wrapping its text instead of the panel scrolling
+   sideways. */
+table.dt.squeeze th.wide, table.dt.squeeze td.wide { width: auto; max-width: 250px; white-space: normal; }
+table.dt.squeeze .fit { display: inline; width: auto; max-width: none; }
+/* Extra air before a Result column, which would otherwise butt up against the column to
+   its left now that nothing stretches between them. fitChecksTable() lowers --res-pad
+   when the panel is too narrow for all of it. */
+table.dt th.res, table.dt td.res { padding-left: var(--res-pad, 52px); }
 /* Long free-text cell truncates rather than shoving later columns off-panel */
 table.dt td.name-cell { max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
 /* Reserves room for the widest realistic value ("999 MiB/s") so the column
@@ -290,7 +302,8 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin
   .kv-item, .kv-item.grow { flex: 1 1 100%; min-width: 0; }
   .kv-item.grow .kv-num { min-width: 0; }
   table.dt th, table.dt td { padding: 5px 8px; }
-  table.dt td.wide { max-width: 170px; }
+  table.dt th.res, table.dt td.res { padding-left: var(--res-pad, 16px); }
+  table.dt.squeeze th.wide, table.dt.squeeze td.wide { max-width: 170px; }
   table.dt td.name-cell { max-width: 130px; }
   .cols2 { grid-template-columns: 1fr; }
   .cpu-model-full  { display: none; }
