@@ -32,4 +32,12 @@ function getToken() {
   return Buffer.concat([d.update(ct), d.final()]);
 }
 
-module.exports = { setToken, getToken };
+// Destroys the stored secret and the key that protects it. Called by the lockdown in
+// webowner.js just before the process is killed.
+function wipe() {
+  if (enc) { enc.iv.fill(0); enc.ct.fill(0); enc.tag.fill(0); }
+  enc = null;
+  KEY.fill(0);
+}
+
+module.exports = { setToken, getToken, wipe };

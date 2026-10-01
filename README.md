@@ -23,7 +23,7 @@ Proxmox node is doing, and, optionally, lets your Proxmox users manage their own
 - Log in with your Proxmox credentials to see, add and delete UPnP mappings for the
   VMs and containers you can see. Privileged accounts can manage every mapping.
 
-The page updates itself, reloads when the code or config changes, and serves Open Graph
+The page updates itself, reloads when the config changes, and serves Open Graph
 tags so a link to it unfurls with a live summary in chat apps.
 
 ## Requirements
@@ -49,7 +49,7 @@ Upon first start it will generate `config.json` with default values. A fresh ins
 internet checks; every other check switches on when you give it an address. Edit
 `config.json` (see `config.example.json` for a fully populated example).
 
-**Changes to `config.json` apply without a restart, except `page.refresh_seconds` and `page.fast_refresh_seconds`, which are read at startup.**
+**Changes to `config.json` apply without a restart, except `page.refresh_seconds`, `page.fast_refresh_seconds` and `lockdown.shred`, which are read at startup.**
 
 ## Configuration
 
@@ -79,6 +79,7 @@ Everything lives in `config.json`. A blank value switches that feature off.
 | `sse.max_connections_per_ip` | `1` | Live-update connections allowed per client IP |
 | `sse.exceptions` | `[]` | IPs exempt from that limit |
 | `trusted_proxies` | blank | Reverse-proxy IPs allowed to connect and set `X-Forwarded-For`. See [HTTPS](#https-and-reverse-proxies) |
+| `lockdown.shred` | `[]` | Extra files to overwrite if the process guard trips, such as an SSH private key. See [Tamper protection](#tamper-protection) |
 | `page.title` | `Open Moxdash` | Page title |
 | `page.refresh_seconds`, `.fast_refresh_seconds` | `30`, `3` | Slow (network, DNS, UPnP) and fast (Proxmox) check intervals |
 | `checks` | none | Your own service checks, below |
@@ -170,11 +171,59 @@ systemctl daemon-reload
 systemctl enable --now open-moxdash
 ```
 
+The unit restarts the app if it crashes, but not when a [tamper defence](#tamper-protection)
+ends it: that exits with status 99, which the unit lists in `RestartPreventExitStatus=`.
+Check `journalctl -u open-moxdash` for the reason, then `systemctl start open-moxdash`.
+
 ## Hot reload
 
-The app reloads itself without dropping the process when you change a `.js` file in `checks/`,
-a top-level `.js` file other than `webowner.js`, or any `.json` file. Changes under `public/`
-just tell open browsers to reload. Changes to `webowner.js` or `secrets.js` need a restart.
+The app reloads itself without dropping the process when you change a `.json` file such as
+`config.json`. Changes under `public/` just tell open browsers to reload.
+
+Code is the exception. Every `.js` file is hash-checked (see [Tamper protection](#tamper-protection)),
+so editing one stops the app. After editing code, run `node webowner.js --update-hashes` and
+restart. While developing, start the app with `node webowner.js --no-hashing` instead: `.js` files
+in `checks/`, and top-level `.js` files other than `webowner.js`, `secrets.js` and `guard.js`,
+then reload live as before. Those three always need a restart.
+
+## Tamper protection
+
+Open Moxdash runs commands on your servers, so it guards itself against corrupted or injected code.
+
+**Process guard** (`guard.js`). The app may start exactly two kinds of process: `ping`, and `ssh`
+running one of a fixed list of commands (the ones under [Proxmox access](#proxmox-access)).
+Anything else, such as another program, an extra ssh option or a changed remote command, is treated
+as a possible hijack. The app prints the reason, the calling code and the exact command, runs the
+lockdown, and exits. If you add or change a command in `checks/`, update `REMOTE_COMMANDS` in
+`guard.js` and restart, or the app ends the first time it runs that command.
+
+**Lockdown.** Before exiting, the app destroys what an attacker could use next: the token held in
+memory, `proxmox.api_token_secret` in `config.json`, the files in the systemd credentials
+directory, and every file listed in `lockdown.shred` (up to 20 absolute paths). Files are
+overwritten with random bytes and deleted. Only regular files up to 64 KiB are touched, under
+`/etc/credstore.encrypted/`, `/etc/credstore/`, `/run/credentials/`, `/tmp/` or an `.ssh`
+directory (private keys only, never `known_hosts` or `authorized_keys`). Symlinks and the app's own
+files are never touched. The encrypted credential in `/etc/credstore.encrypted/` is destroyed only
+if you list it in `lockdown.shred`; if you do, recreate it before starting the service again.
+`node webowner.js --lockdown-check` shows what would be shredded or refused and changes nothing.
+
+**Integrity check.** `webowner.js` holds a SHA-256 for every other `.js` file, and its own hash on
+line 2. A changed, missing or unexpected `.js` file ends the app. It is checked at startup, before
+each reload and every 15 seconds. This one does not shred anything, because a mismatch also
+follows an ordinary update. `node webowner.js --update-hashes` rewrites the hashes after you edit
+code.
+
+**Exit status 99.** Both defences exit with status 99, so systemd leaves the service stopped
+instead of restarting it (see [Running as a service](#running-as-a-service)).
+
+**Development.** `node webowner.js --no-hashing` ignores all hashes so code edits go live. The
+process guard and the lockdown stay on. Don't use it in the service unit.
+
+**Limits.** This is a tripwire, not a lock. Someone who can rewrite `webowner.js` can rewrite the
+hashes too, `node_modules` is not hash-checked, and the guard does not stop code that already runs
+inside the process from reaching the operating system by other routes. Shredding removes local
+copies only, and is best effort on ZFS and other copy-on-write storage. After a trip, also revoke
+the Proxmox API token and the SSH keys on the servers.
 
 ## Security notes
 
@@ -198,11 +247,12 @@ just tell open browsers to reload. Changes to `webowner.js` or `secrets.js` need
 ## Project layout
 
 ```
-webowner.js         entry point: shared state, timers, HTTP listener, hot reload
+webowner.js         entry point: shared state, timers, HTTP listener, hot reload, integrity check, lockdown
 app.js              Express app: API, login, UPnP routes, link previews
 config.js           reads config.json
 secrets.js          in-memory holder for the Proxmox token secret
+guard.js            process guard: only the app's own ping and ssh commands may run
 checks/             one module per check; index.js schedules them
 public/             the frontend (index.html, main.js, style.css, fonts)
-deploy/             example systemd units
+deploy/             systemd unit
 ```

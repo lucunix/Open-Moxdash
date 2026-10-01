@@ -17,6 +17,8 @@ function sshTarget(host) {
 
 // Returns an ssh(cmd, timeout) function that reuses a persistent ControlMaster
 // socket for the given host — all parallel callers share one TCP connection.
+// Every command sent through here is checked by guard.js before it starts: a new or
+// changed remote command must be added to the allowlist there.
 function makeSSH(host) {
   const { sshUser, socket } = sshTarget(host);
   return (cmd, timeout) => {

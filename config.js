@@ -35,6 +35,9 @@ const CONFIG_PATH = path.join(__dirname, 'config.json');
 //   dhcp.server                DHCP server to probe; blank disables the check
 //   sse.max_connections_per_ip, sse.exceptions  cap on live-update connections, and the
 //                              IPs exempt from it
+//   lockdown.shred             extra secret files (for example an SSH private key) to overwrite
+//                              and delete if the process locks down; read once at startup and
+//                              fenced in by webowner.js, see `--lockdown-check`
 //   trusted_proxies            reverse-proxy IPs allowed to connect and to set
 //                              X-Forwarded-For; blank means anyone
 //   page.title, .refresh_seconds, .fast_refresh_seconds  page title and cycle lengths
@@ -79,6 +82,9 @@ const DEFAULT_CONFIG = {
     exceptions: [],
   },
   trusted_proxies: '',
+  lockdown: {
+    shred: [],
+  },
   page: {
     title:                'Open Moxdash',
     refresh_seconds:      30,

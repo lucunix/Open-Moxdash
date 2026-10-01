@@ -7,6 +7,10 @@ WorkingDirectory=/opt/open-moxdash
 ExecStart=/usr/bin/node /opt/open-moxdash/webowner.js
 Restart=always
 RestartSec=5
+# Exit status 99 is what the app ends with when a defence trips (integrity check or process
+# guard). systemd then leaves the service stopped instead of restarting it, whatever
+# Restart= says. After finding out why, start it again with `systemctl start open-moxdash`.
+RestartPreventExitStatus=99
 
 # Optional: supply the Proxmox API token secret as an encrypted credential instead of
 # putting it in config.json. Create the credential with:

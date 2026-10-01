@@ -1,0 +1,2 @@
+# The integrity hashes in webowner.js are over exact bytes, so keep line endings stable.
+*.js text eol=lf

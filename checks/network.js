@@ -4,7 +4,8 @@
 const { cfg }   = require('../config');
 
 // Runs a shell command and resolves { ok, stdout, stderr }; never rejects. ok is
-// true only for exit code 0 (and false on timeout or spawn failure).
+// true only for exit code 0 (and false on timeout or spawn failure). guard.js permits
+// only ping and ssh command lines here and terminates the process for anything else.
 function run(cmd, timeoutMs = 6000) {
   return new Promise(resolve => {
     // detached: true puts the child in its own process group so we can kill

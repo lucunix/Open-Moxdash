@@ -39,6 +39,9 @@
     "exceptions": []
   },
   "trusted_proxies": "",
+  "lockdown": {
+    "shred": []
+  },
   "page": {
     "title": "Open Moxdash",
     "refresh_seconds": 30,
